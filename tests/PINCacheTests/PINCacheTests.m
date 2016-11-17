@@ -34,10 +34,15 @@ const NSTimeInterval PINCacheTestBlockTimeout = 20.0;
 - (void)tearDown
 {
     [self.cache removeAllObjects];
-    
-    // Disk cache needs a bit more time to clean up its trash 
-    sleep(1);
 
+    // Wait for disk cache to clean up its trash
+    dispatch_group_t group = dispatch_group_create();
+    dispatch_group_enter(group);
+    dispatch_async([PINDiskCache sharedTrashQueue], ^{
+        dispatch_group_leave(group);
+    });
+    dispatch_group_wait(group, DISPATCH_TIME_FOREVER);
+  
     self.cache = nil;
 
     XCTAssertNil(self.cache, @"test cache did not deallocate");
